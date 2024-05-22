@@ -1,3 +1,5 @@
+use std::time::{Duration, Instant};
+
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use sha3::{Digest, Sha3_512};
@@ -8,9 +10,11 @@ use crate::blockchain::BlockChain;
 pub struct Block {
     pub index: u64,
     pub timestamp: u64,
+    pub data: String,
     pub proof_of_work: u64,
     pub previous_hash: String,
     pub hash: String,
+    pub hash_time_cost: Duration,
 }
 
 impl Block {
@@ -24,13 +28,15 @@ impl Block {
         format!("{:x}", hash)
     }
 
-    pub fn new(index: u64, previous_hash: String) -> Self {
+    pub fn new(index: u64, data: String, previous_hash: String, instant: Instant) -> Self {
         Block {
             index,
             timestamp: Utc::now().timestamp_millis() as u64,
+            data,
             proof_of_work: 0_u64,
             previous_hash,
             hash: String::new(),
+            hash_time_cost: instant.elapsed(),
         }
     }
 
