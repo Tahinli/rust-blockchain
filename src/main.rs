@@ -1,24 +1,36 @@
-use std::time::Instant;
+use rust_blockchain::{
+    blockchain::BlockChain,
+    network::start_network,
+    utils::{read_server_config, take_args},
+    Runner,
+};
+use tokio::sync::broadcast;
 
-use rust_blockchain::blockchain::BlockChain;
-
-fn main() {
+#[tokio::main]
+async fn main() {
     println!("Hello, world!");
 
-    let difficulty = 1;
+    match take_args() {
+        Some(runner) => match runner {
+            Runner::Server => server().await,
+            Runner::Client => todo!(),
+        },
+        None => return,
+    };
+}
 
-    let mut blockchain = BlockChain::new(difficulty);
-    let instant = Instant::now();
-    BlockChain::add_block(&mut blockchain, "T".to_string(), Instant::now());
-    BlockChain::add_block(&mut blockchain, "a".to_string(), Instant::now());
-    BlockChain::add_block(&mut blockchain, "h".to_string(), Instant::now());
-    BlockChain::add_block(&mut blockchain, "i".to_string(), Instant::now());
-    BlockChain::add_block(&mut blockchain, "n".to_string(), Instant::now());
-    BlockChain::add_block(&mut blockchain, "l".to_string(), Instant::now());
-    BlockChain::add_block(&mut blockchain, "i".to_string(), Instant::now());
-    println!(
-        "\t ⛏️⛏️⛏️    | Mined |   ⛏️⛏️⛏️\n\n\tElapsed: {:?}\n\n{:#?}",
-        instant.elapsed(),
-        blockchain
-    );
+async fn server() {
+    let server_config = match read_server_config() {
+        Some(server_config) => server_config,
+        None => return,
+    };
+
+    let blockchain = BlockChain::new(server_config.difficulty.into());
+    let block_data_channel_sender = broadcast::channel(1).0;
+    start_network(
+        server_config,
+        &blockchain,
+        block_data_channel_sender.subscribe(),
+    )
+    .await;
 }
