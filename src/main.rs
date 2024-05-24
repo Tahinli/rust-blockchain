@@ -1,7 +1,7 @@
 use rust_blockchain::{
     blockchain::BlockChain,
-    network::start_network,
-    utils::{read_server_config, take_args},
+    client_network, server_network,
+    utils::{read_client_config, read_server_config, take_args},
     Runner,
 };
 use tokio::sync::broadcast;
@@ -13,10 +13,11 @@ async fn main() {
     match take_args() {
         Some(runner) => match runner {
             Runner::Server => server().await,
-            Runner::Client => todo!(),
+            Runner::Client => client().await,
         },
         None => return,
     };
+    todo!("Limbo Block: Not in chain, but processing by others or none. Sync it also")
 }
 
 async fn server() {
@@ -27,10 +28,18 @@ async fn server() {
 
     let blockchain = BlockChain::new(server_config.difficulty.into());
     let block_data_channel_sender = broadcast::channel(1).0;
-    start_network(
+    server_network::start_network(
         server_config,
         &blockchain,
         block_data_channel_sender.subscribe(),
     )
     .await;
+}
+
+async fn client() {
+    let client_config = match read_client_config() {
+        Some(client_config) => client_config,
+        None => return,
+    };
+    client_network::start_network(client_config).await;
 }
