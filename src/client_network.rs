@@ -1,6 +1,9 @@
-use futures_util::{stream::SplitStream, StreamExt};
+use futures_util::{
+    stream::{SplitSink, SplitStream},
+    SinkExt, StreamExt,
+};
 use tokio::net::TcpStream;
-use tokio_tungstenite::{connect_async, MaybeTlsStream, WebSocketStream};
+use tokio_tungstenite::{connect_async, tungstenite::Message, MaybeTlsStream, WebSocketStream};
 
 use crate::{block::Block, blockchain::BlockChain, ClientConfig};
 
@@ -14,11 +17,14 @@ pub async fn start_network(client_config: ClientConfig) {
         Ok(ws_stream) => ws_stream,
         Err(_) => return,
     };
-    let (_, ws_receiver) = ws_stream.0.split();
-    sync(ws_receiver).await;
+    let (ws_stream_sender, ws_stream_receiver) = ws_stream.0.split();
+    sync(ws_stream_sender, ws_stream_receiver).await;
 }
 
-async fn sync(ws_stream_receiver: SplitStream<WebSocketStream<MaybeTlsStream<TcpStream>>>) {
+async fn sync(
+    mut ws_stream_sender: SplitSink<WebSocketStream<MaybeTlsStream<TcpStream>>, Message>,
+    ws_stream_receiver: SplitStream<WebSocketStream<MaybeTlsStream<TcpStream>>>,
+) {
     let (mut ws_stream_receiver, mut blockchain) =
         match receive_blockchain(ws_stream_receiver).await {
             Some((ws_stream_receiver, blockchain)) => (ws_stream_receiver, blockchain),
@@ -30,7 +36,11 @@ async fn sync(ws_stream_receiver: SplitStream<WebSocketStream<MaybeTlsStream<Tcp
             Some((ws_stream_receiver, block)) => (ws_stream_receiver, block),
             None => return,
         };
-        blockchain.add_block(block);
+        let block = blockchain.add_block(block);
+        ws_stream_sender = match send_block(ws_stream_sender, block).await {
+            Some(ws_stream_sender) => ws_stream_sender,
+            None => return,
+        }
     }
 }
 
@@ -81,5 +91,19 @@ async fn receive_block(
             Err(_) => return None,
         },
         None => return None,
+    }
+}
+
+async fn send_block(
+    mut ws_stream_sender: SplitSink<WebSocketStream<MaybeTlsStream<TcpStream>>, Message>,
+    block: Block,
+) -> Option<SplitSink<WebSocketStream<MaybeTlsStream<TcpStream>>, Message>> {
+    let block_data = serde_json::json!(block).to_string();
+    match ws_stream_sender.send(block_data.into()).await {
+        Ok(_) => match ws_stream_sender.flush().await {
+            Ok(_) => Some(ws_stream_sender),
+            Err(_) => None,
+        },
+        Err(_) => None,
     }
 }
