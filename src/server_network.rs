@@ -35,12 +35,11 @@ pub async fn start_network(
         blockchain_thread_safe.clone(),
         consensus_data_channels.clone(),
     ));
-    //todo!("Consensus should be notified for new block, should forget old blocks");
     loop {
         if let Ok(connection) = listener_socket.accept().await {
             let ws_stream = match accept_async(connection.0).await {
                 Ok(ws_stream) => ws_stream,
-                Err(_) => return,
+                Err(_) => continue,
             };
             let (ws_stream_sender, ws_stream_receiver) = ws_stream.split();
             let blockchain_thread_safe = blockchain_thread_safe.clone();
