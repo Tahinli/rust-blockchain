@@ -54,7 +54,7 @@ pub async fn start_network(
                 uuid: Uuid::new_v4(),
             };
 
-            let uuid = block_receiver.uuid.clone();
+            let uuid = block_receiver.uuid;
 
             consensus_data_channels.lock().await.push(block_receiver);
 
@@ -74,7 +74,6 @@ pub async fn start_network(
                             consensus_data_channels.remove(block_receiver_index);
                         };
                         drop(consensus_data_channels);
-                        return ;
                     }
 
                     _ = sync_server(ws_stream_receiver, consensus_data_channel_sender) => {
@@ -84,7 +83,6 @@ pub async fn start_network(
                             consensus_data_channels.remove(block_receiver_index);
                         };
                         drop(consensus_data_channels);
-                        return ;
                     }
                 }
             });
@@ -102,7 +100,7 @@ async fn sync_server(
             Some((ws_stream_receiver, block)) => (ws_stream_receiver, block),
             None => return,
         };
-        if let Err(_) = consensus_data_channel_sender.send(block) {
+        if consensus_data_channel_sender.send(block).is_err() {
             return;
         }
     }
@@ -121,12 +119,12 @@ async fn receive_block(
                     };
                     Some((ws_stream_receiver, block))
                 } else {
-                    return None;
+                    None
                 }
             }
-            Err(_) => return None,
+            Err(_) => None,
         },
-        None => return None,
+        None => None,
     }
 }
 

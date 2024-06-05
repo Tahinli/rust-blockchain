@@ -11,15 +11,16 @@ pub async fn accept_agreement(
     limbo_block: Arc<Mutex<Block>>,
 ) {
     let mut received_blocks = vec![];
+    let empty_string = String::new();
     loop {
         for channel in consensus_data_channels.lock().await.iter_mut() {
-            match channel.block_receiver.try_recv() {
-                Ok(block) => {
-                    if block.previous_hash == limbo_block.lock().await.previous_hash {
-                        received_blocks.push(block);
-                    }
+            if let Ok(block) = channel.block_receiver.try_recv() {
+                let limbo_block = limbo_block.lock().await;
+                if (limbo_block.previous_hash != empty_string)
+                    && (block.previous_hash == limbo_block.previous_hash)
+                {
+                    received_blocks.push(block);
                 }
-                Err(_) => {}
             }
         }
 
@@ -49,7 +50,9 @@ pub async fn accept_agreement(
                                     *limbo_block.lock().await =
                                         blockchain_thread_safe.lock().await.genesis_block.clone()
                                 }
-                                Err(_) => {}
+                                Err(_) => {
+                                    todo!()
+                                }
                             }
                         }
                         None => todo!(),

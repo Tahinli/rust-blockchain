@@ -64,12 +64,12 @@ async fn receive_blockchain(
                     };
                     Some((ws_stream_receiver, blockchain))
                 } else {
-                    return None;
+                    None
                 }
             }
-            Err(_) => return None,
+            Err(_) => None,
         },
-        None => return None,
+        None => None,
     }
 }
 
@@ -89,12 +89,12 @@ async fn receive_block(
                     };
                     Some((ws_stream_receiver, block))
                 } else {
-                    return None;
+                    None
                 }
             }
-            Err(_) => return None,
+            Err(_) => None,
         },
-        None => return None,
+        None => None,
     }
 }
 
