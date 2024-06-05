@@ -36,10 +36,14 @@ async fn sync(
             Some((ws_stream_receiver, block)) => (ws_stream_receiver, block),
             None => return,
         };
-        let block = blockchain.add_block(block);
-        ws_stream_sender = match send_block(ws_stream_sender, block).await {
-            Some(ws_stream_sender) => ws_stream_sender,
-            None => return,
+        if block.hash == String::new() {
+            let block = blockchain.add_block(block);
+            ws_stream_sender = match send_block(ws_stream_sender, block).await {
+                Some(ws_stream_sender) => ws_stream_sender,
+                None => return,
+            }
+        } else {
+            blockchain.push_block(block);
         }
     }
 }
