@@ -44,8 +44,13 @@ pub async fn accept_agreement(
             //03.46 right now.
             for block in received_blocks.iter() {
                 if max_pair.0 == block.hash {
-                    match blockchain_thread_safe.lock().await.add_block(block.clone()) {
-                        Some(_successfully_added_block) => {
+                    match blockchain_thread_safe
+                        .lock()
+                        .await
+                        .push_block(block.clone())
+                    {
+                        Some(successfully_added_block) => {
+                            println!("{:#?}", successfully_added_block);
                             todo!("Notify Whole Network, Reward First Founder or Else")
                         }
                         None => todo!(),
