@@ -19,8 +19,10 @@ use crate::{block::Block, blockchain::BlockChain, consensus, BlockReceiver, Serv
 pub async fn start_network(
     server_config: ServerConfig,
     blockchain_thread_safe: Arc<Mutex<BlockChain>>,
-    block_data_channel_receiver: Receiver<Block>,
+    block_data_channel_sender: Sender<Block>,
+    limbo_block: Arc<Mutex<Block>>,
 ) {
+    let block_data_channel_receiver = block_data_channel_sender.subscribe();
     let listener_socket = match TcpListener::bind(format!(
         "{}:{}",
         server_config.server_address, server_config.port
@@ -34,6 +36,8 @@ pub async fn start_network(
     tokio::spawn(consensus::accept_agreement(
         blockchain_thread_safe.clone(),
         consensus_data_channels.clone(),
+        block_data_channel_sender,
+        limbo_block.clone(),
     ));
     loop {
         if let Ok(connection) = listener_socket.accept().await {
@@ -55,12 +59,14 @@ pub async fn start_network(
             consensus_data_channels.lock().await.push(block_receiver);
 
             let consensus_data_channels = consensus_data_channels.clone();
+            let limbo_block = limbo_block.clone();
             tokio::spawn(async move {
                 tokio::select! {
                     _ = sync_client(
                         ws_stream_sender,
                         blockchain_thread_safe,
                         block_data_channel_receiver,
+                        limbo_block,
                     ) => {
                         let mut consensus_data_channels = consensus_data_channels.lock().await;
                         consensus_data_channels.sort();
@@ -128,13 +134,20 @@ async fn sync_client(
     ws_stream_sender: SplitSink<WebSocketStream<TcpStream>, Message>,
     blockchain_thread_safe: Arc<Mutex<BlockChain>>,
     mut block_data_channel_receiver: Receiver<Block>,
+    limbo_block: Arc<Mutex<Block>>,
 ) {
-    let mut ws_stream_sender = match send_blockchain(ws_stream_sender, blockchain_thread_safe).await
-    {
-        Some(ws_stream_sender) => ws_stream_sender,
-        None => return,
-    };
-
+    let mut ws_stream_sender =
+        match send_blockchain(ws_stream_sender, blockchain_thread_safe.clone()).await {
+            Some(ws_stream_sender) => ws_stream_sender,
+            None => return,
+        };
+    let limbo_block = limbo_block.lock().await;
+    if limbo_block.timestamp != blockchain_thread_safe.lock().await.genesis_block.timestamp {
+        ws_stream_sender = match send_block(ws_stream_sender, limbo_block.clone()).await {
+            Some(ws_stream_sender) => ws_stream_sender,
+            None => return,
+        }
+    }
     loop {
         let block = match block_data_channel_receiver.recv().await {
             Ok(block) => block,

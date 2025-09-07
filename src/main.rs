@@ -19,8 +19,6 @@ async fn main() {
         },
         None => return,
     };
-    //todo!("Limbo Block: Not in chain, but processing by others or none. Sync it also");
-    //todo!("Consensus should be notified for new block, should forget old blocks");
 }
 
 async fn server() {
@@ -30,6 +28,7 @@ async fn server() {
     };
 
     let blockchain = BlockChain::new(server_config.difficulty.into());
+    let limbo_block = Arc::new(Mutex::new(blockchain.genesis_block.clone()));
     let blockchain_thread_safe = Arc::new(Mutex::new(blockchain));
 
     let block_data_channel_sender = broadcast::channel(1).0;
@@ -37,7 +36,8 @@ async fn server() {
     server_network::start_network(
         server_config,
         blockchain_thread_safe,
-        block_data_channel_sender.subscribe(),
+        block_data_channel_sender,
+        limbo_block,
     )
     .await;
 }
