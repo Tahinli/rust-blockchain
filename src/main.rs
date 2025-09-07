@@ -29,8 +29,9 @@ async fn server() {
     };
 
     let blockchain = BlockChain::new(server_config.difficulty.into());
-    let block_data_channel_sender = broadcast::channel(1).0;
     let blockhain_thread_safe = Arc::new(Mutex::new(blockchain));
+
+    let block_data_channel_sender = broadcast::channel(1).0;
 
     server_network::start_network(
         server_config,

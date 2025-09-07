@@ -19,14 +19,15 @@ pub async fn start_network(client_config: ClientConfig) {
 }
 
 async fn sync(ws_stream_receiver: SplitStream<WebSocketStream<MaybeTlsStream<TcpStream>>>) {
-    let (mut ws_stream, mut blockchain) = match receive_blockchain(ws_stream_receiver).await {
-        Some((ws_stream, blockchain)) => (ws_stream, blockchain),
-        None => return,
-    };
+    let (mut ws_stream_receiver, mut blockchain) =
+        match receive_blockchain(ws_stream_receiver).await {
+            Some((ws_stream_receiver, blockchain)) => (ws_stream_receiver, blockchain),
+            None => return,
+        };
     loop {
         let block: Block;
-        (ws_stream, block) = match receive_block(ws_stream).await {
-            Some((ws_stream, block)) => (ws_stream, block),
+        (ws_stream_receiver, block) = match receive_block(ws_stream_receiver).await {
+            Some((ws_stream_receiver, block)) => (ws_stream_receiver, block),
             None => return,
         };
         blockchain.add_block(block);

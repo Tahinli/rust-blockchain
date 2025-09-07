@@ -51,8 +51,12 @@ impl BlockChain {
         self.chain.push(new_block);
     }
 
-    pub fn add_block(&mut self, mut block: Block) {
-        block.mine(self.difficulty);
-        self.chain.push(block);
+    pub fn add_block(&mut self, block: Block) -> Option<Block> {
+        if block.hash != String::new() {
+            self.chain.push(block.clone());
+            Some(block)
+        } else {
+            None
+        }
     }
 }
