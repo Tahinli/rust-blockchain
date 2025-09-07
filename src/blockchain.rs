@@ -34,20 +34,25 @@ impl BlockChain {
         }
     }
 
-    pub fn add_block(
+    pub fn create_block(
         &mut self,
-        data: String,
+        data: impl ToString,
         instant: Instant,
         block_data_channel_sender: Sender<Block>,
     ) {
         let new_block = Block::new(
             self.chain.len() as u64,
-            data,
+            data.to_string(),
             self.chain[&self.chain.len() - 1].hash.clone(),
             instant,
             block_data_channel_sender,
         )
-        .mine(self.clone());
+        .mine(self.difficulty);
         self.chain.push(new_block);
+    }
+
+    pub fn add_block(&mut self, mut block: Block) {
+        block.mine(self.difficulty);
+        self.chain.push(block);
     }
 }

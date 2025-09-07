@@ -1,10 +1,12 @@
+use std::sync::Arc;
+
 use rust_blockchain::{
     blockchain::BlockChain,
     client_network, server_network,
     utils::{read_client_config, read_server_config, take_args},
     Runner,
 };
-use tokio::sync::broadcast;
+use tokio::sync::{broadcast, Mutex};
 
 #[tokio::main]
 async fn main() {
@@ -28,9 +30,11 @@ async fn server() {
 
     let blockchain = BlockChain::new(server_config.difficulty.into());
     let block_data_channel_sender = broadcast::channel(1).0;
+    let blockhain_thread_safe = Arc::new(Mutex::new(blockchain));
+
     server_network::start_network(
         server_config,
-        &blockchain,
+        blockhain_thread_safe,
         block_data_channel_sender.subscribe(),
     )
     .await;

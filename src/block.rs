@@ -5,8 +5,6 @@ use serde::{Deserialize, Serialize};
 use sha3::{Digest, Sha3_512};
 use tokio::sync::broadcast::Sender;
 
-use crate::blockchain::BlockChain;
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Block {
     pub index: u64,
@@ -49,10 +47,10 @@ impl Block {
         block
     }
 
-    pub fn mine(&mut self, blockhain: BlockChain) -> Self {
+    pub fn mine(&mut self, difficulty: usize) -> Self {
         let mut hash = self.calculate_hash();
         loop {
-            if !hash.starts_with(&"0".repeat(blockhain.difficulty)) {
+            if !hash.starts_with(&"0".repeat(difficulty)) {
                 self.proof_of_work += 1;
                 hash = self.calculate_hash();
             } else {

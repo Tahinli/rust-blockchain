@@ -33,7 +33,7 @@ async fn create_block() {
     let instant = Instant::now();
     let mut blockchain = BlockChain::new(1);
     let block_data_channel_sender = channel(1).0;
-    BlockChain::add_block(
+    BlockChain::create_block(
         &mut blockchain,
         "Ahmet Kaan Gümüş".to_string(),
         instant,
