@@ -8,14 +8,17 @@ fn main() {
     let difficulty = 1;
 
     let mut blockchain = BlockChain::new(difficulty);
-    let time = Instant::now();
-    BlockChain::add_block(&mut blockchain);
-    BlockChain::add_block(&mut blockchain);
-    BlockChain::add_block(&mut blockchain);
-    BlockChain::add_block(&mut blockchain);
+    let instant = Instant::now();
+    BlockChain::add_block(&mut blockchain, "T".to_string(), Instant::now());
+    BlockChain::add_block(&mut blockchain, "a".to_string(), Instant::now());
+    BlockChain::add_block(&mut blockchain, "h".to_string(), Instant::now());
+    BlockChain::add_block(&mut blockchain, "i".to_string(), Instant::now());
+    BlockChain::add_block(&mut blockchain, "n".to_string(), Instant::now());
+    BlockChain::add_block(&mut blockchain, "l".to_string(), Instant::now());
+    BlockChain::add_block(&mut blockchain, "i".to_string(), Instant::now());
     println!(
         "\t ⛏️⛏️⛏️    | Mined |   ⛏️⛏️⛏️\n\n\tElapsed: {:?}\n\n{:#?}",
-        time.elapsed(),
+        instant.elapsed(),
         blockchain
     );
 }
