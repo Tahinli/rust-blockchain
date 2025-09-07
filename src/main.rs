@@ -10,6 +10,9 @@ fn main() {
     let mut blockchain = BlockChain::new(difficulty);
     let time = Instant::now();
     BlockChain::add_block(&mut blockchain);
+    BlockChain::add_block(&mut blockchain);
+    BlockChain::add_block(&mut blockchain);
+    BlockChain::add_block(&mut blockchain);
     println!(
         "\t ⛏️⛏️⛏️    | Mined |   ⛏️⛏️⛏️\n\n\tElapsed: {:?}\n\n{:#?}",
         time.elapsed(),

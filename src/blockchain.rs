@@ -21,18 +21,17 @@ impl BlockChain {
 
         let chain = vec![genesis_block.clone()];
 
-        let blockchain = BlockChain {
+        BlockChain {
             genesis_block,
             chain,
             difficulty,
-        };
-        blockchain
+        }
     }
 
     pub fn add_block(&mut self) {
         let new_block = Block::new(
             self.chain.len() as u64,
-            self.chain[&self.chain.len() - 1].previous_hash.clone(),
+            self.chain[&self.chain.len() - 1].hash.clone(),
         )
         .mine(self.clone());
         self.chain.push(new_block);
