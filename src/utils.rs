@@ -1,6 +1,6 @@
 use std::{env, fs::File, io::Read};
 
-use crate::{Runner, ServerConfig};
+use crate::{ClientConfig, Runner, ServerConfig};
 
 pub fn take_args() -> Option<Runner> {
     let args: Vec<String> = env::args().collect();
@@ -24,22 +24,22 @@ pub fn read_server_config() -> Option<ServerConfig> {
     match server_config_file.read_to_string(&mut server_configs) {
         Ok(_) => {
             let server_configs: Vec<String> =
-                server_configs.split("\n").map(|x| x.to_string()).collect();
-            let server_address = match server_configs[0].split(":").last() {
+                server_configs.split('\n').map(|x| x.to_string()).collect();
+            let server_address = match server_configs[0].split(':').last() {
                 Some(server_address_unchecked) => match server_address_unchecked.parse() {
                     Ok(server_address) => server_address,
                     Err(_) => return None,
                 },
                 None => return None,
             };
-            let port = match server_configs[1].split(":").last() {
+            let port = match server_configs[1].split(':').last() {
                 Some(port_unchecked) => match port_unchecked.parse() {
                     Ok(port) => port,
                     Err(_) => return None,
                 },
                 None => return None,
             };
-            let difficulty = match server_configs[2].split(":").last() {
+            let difficulty = match server_configs[2].split(':').last() {
                 Some(difficulty_unchecked) => match difficulty_unchecked.parse() {
                     Ok(difficulty) => difficulty,
                     Err(_) => return None,
@@ -50,6 +50,39 @@ pub fn read_server_config() -> Option<ServerConfig> {
                 server_address,
                 port,
                 difficulty,
+            })
+        }
+        Err(_) => None,
+    }
+}
+
+pub fn read_client_config() -> Option<ClientConfig> {
+    let mut client_config_file = match File::open("configs/server_config.txt") {
+        Ok(client_config_file) => client_config_file,
+        Err(_) => return None,
+    };
+    let mut client_configs = String::new();
+    match client_config_file.read_to_string(&mut client_configs) {
+        Ok(_) => {
+            let client_configs: Vec<String> =
+                client_configs.split('\n').map(|x| x.to_string()).collect();
+            let server_address = match client_configs[0].split(':').last() {
+                Some(server_address_unchecked) => match server_address_unchecked.parse() {
+                    Ok(server_address) => server_address,
+                    Err(_) => return None,
+                },
+                None => return None,
+            };
+            let port = match client_configs[1].split(':').last() {
+                Some(port_unchecked) => match port_unchecked.parse() {
+                    Ok(port) => port,
+                    Err(_) => return None,
+                },
+                None => return None,
+            };
+            Some(ClientConfig {
+                server_address,
+                port,
             })
         }
         Err(_) => None,
