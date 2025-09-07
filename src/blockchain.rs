@@ -1,10 +1,12 @@
 use std::time::{Duration, Instant};
 
 use chrono::Utc;
+use serde::{Deserialize, Serialize};
+use tokio::sync::broadcast::Sender;
 
 use crate::block::Block;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BlockChain {
     pub genesis_block: Block,
     pub chain: Vec<Block>,
@@ -32,12 +34,18 @@ impl BlockChain {
         }
     }
 
-    pub fn add_block(&mut self, data: String, instant: Instant) {
+    pub fn add_block(
+        &mut self,
+        data: String,
+        instant: Instant,
+        block_data_channel_sender: Sender<Block>,
+    ) {
         let new_block = Block::new(
             self.chain.len() as u64,
             data,
             self.chain[&self.chain.len() - 1].hash.clone(),
             instant,
+            block_data_channel_sender,
         )
         .mine(self.clone());
         self.chain.push(new_block);

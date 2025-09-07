@@ -3,6 +3,7 @@ use std::time::{Duration, Instant};
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use sha3::{Digest, Sha3_512};
+use tokio::sync::broadcast::Sender;
 
 use crate::blockchain::BlockChain;
 
@@ -28,8 +29,14 @@ impl Block {
         format!("{:x}", hash)
     }
 
-    pub fn new(index: u64, data: String, previous_hash: String, instant: Instant) -> Self {
-        Block {
+    pub fn new(
+        index: u64,
+        data: String,
+        previous_hash: String,
+        instant: Instant,
+        block_data_channel_sender: Sender<Block>,
+    ) -> Self {
+        let block = Block {
             index,
             timestamp: Utc::now().timestamp_millis() as u64,
             data,
@@ -37,7 +44,9 @@ impl Block {
             previous_hash,
             hash: String::new(),
             hash_time_cost: instant.elapsed(),
-        }
+        };
+        let _ = block_data_channel_sender.send(block.clone());
+        block
     }
 
     pub fn mine(&mut self, blockhain: BlockChain) -> Self {
